@@ -1,0 +1,187 @@
+2 BUOC THUC HIEN:
+
+B1: GIVE THIS CODE INTO FUNCTION FILE:
+//==================== nav-pagination ========================//
+function nt_posts_count($args, $all = true) {
+    global $wpdb;
+    if($all === true) {
+        $args['posts_per_page'] = -1;
+    }
+    $args['count'] = 1;
+    $the_query = new WP_Query( $args );
+    $sql = "SELECT count(*) as count from (".str_replace("SQL_CALC_FOUND_ROWS ",'',$the_query->request).") as sub";
+    $row = $wpdb->get_row( $sql );
+    if($row){
+        return $row->count;
+    }
+    return 0;
+}
+function nt_page_link($page = 1, $link='') {
+    if(!$link) return;
+    $newLink = '';
+    $subLink = '';
+    $pos =  strpos($link,'page');
+    $pos = ($pos!==false)?$pos:strpos($link,'paged');
+    if($pos!==false){
+        $newLink = substr($link,0,$pos-1);
+    }
+    $newLink = $newLink?$newLink:$link;
+
+    $page = is_numeric($page)?$page:1;
+
+    $pos =  strpos($link,'/?');
+    if($pos!==false){
+        $newLink = substr($newLink,0,$pos);
+        $subLink = substr($link,$pos);
+    }
+    if($page > 1 && is_archive()){
+        $newLink .='/?page='.$page;
+    }
+    elseif($page > 1) {
+        $newLink .='/page/'.$page;
+    }
+    $newLink .= $subLink;
+    return $newLink;
+}
+function nt_pagination($args,$params = array(),$page='') {
+    if(!$page) {
+        global $wp;
+        $current_url = home_url(add_query_arg(array(),$wp->request));
+    }
+    else {
+        $current_url = $page;
+    }
+    $number = $args['posts_per_page'];
+    $args['posts_per_page'] = -1;
+    $all = nt_posts_count($args);
+    if($all) {
+        $percent = $all % $number;
+        $number_p = ($percent)?(($all-$percent)/$number + 1):($all/$number);
+        if($number_p>1){
+            $display = wp_is_mobile()?3:5;
+            if($display%2==0) {
+                $display -= 1;
+            }
+            $paged = (isset($args['paged']) && $args['paged']>1)?$args['paged']:1;
+            $data = ' data-link='.$current_url;
+            if(is_array($params) && count($params)) {
+                foreach ($params as $key=>$param){
+                    $data.= ' data-'.$key.'="'.$param.'"';
+                }
+            }
+            $number_plus = floor($display/2);
+            ?>
+            <ul class="nav_pagination">
+                <?php 
+                    $url = nt_page_link( 1,$current_url ); 
+                    $prev = $paged>1?$paged-1:1; 
+                    $url = nt_page_link( $prev,$current_url );
+                ?>
+                <?php
+                    if($paged > $prev):
+                        ?>
+                        <li class="btn-prev">
+                            <a <?php echo $data; ?> data-page="<?php echo $prev; ?>" href="<?php echo $url; ?>"><</a>
+                        </li>
+                        <?php
+                    endif;
+                ?>
+                <?php 
+                if($number_p < $display): 
+                    for($i=1; $i<=$number_p;$i++):
+                        $url = nt_page_link( $i,$current_url ); ?>
+                        <li <?php echo ($i==$paged)?' class="active"':''; ?>><a <?php echo $data; ?> data-page="<?php echo $i ?>" href="<?php echo $url; ?>"><span><?php echo $i ?></span></a></li>
+                        <?php 
+                    endfor; 
+                elseif($paged > $number_p - $number_plus) :
+                    for($i=$number_p-$display+1; $i<=$number_p;$i++): ?>
+                        <?php $url = ($i==$paged)?'javascript:void(0)':nt_page_link( $i,$current_url ); ?>
+                        <li <?php echo ($i==$paged)?' class="active"':''; ?>><a <?php echo $data; ?> data-page="<?php echo $i ?>" href="<?php echo $url; ?>"><span><?php echo $i ?></span></a></li>
+                        <?php 
+                    endfor; 
+                else: 
+                    if($paged <= $number_plus): 
+                        for($i=1; $i<=$display;$i++): ?>
+                            <?php $url = ($i==$paged)?'javascript:void(0)':nt_page_link( $i,$current_url ); ?>
+                            <li <?php echo ($i==$paged)?' class="active"':''; ?>><a <?php echo $data; ?> data-page="<?php echo $i ?>" href="<?php echo $url; ?>"><span><?php echo $i ?></span></a></li>
+                            <?php 
+                        endfor; 
+                    else: 
+                        for($i=$paged-$number_plus; $i<$paged;$i++): 
+                            $url = nt_page_link( $i,$current_url ); 
+                                ?>
+                            <li><a <?php echo $data; ?> data-page="<?php echo $i ?>" href="<?php echo $url; ?>"><span><?php echo $i ?></span></a></li>
+                        <?php endfor; ?>
+
+                        <li class="active"><a <?php echo $data; ?> data-page="<?php echo $paged ?>" href="javascript:void(0)"><span><?php echo $i ?></span></a></li>
+
+                        <?php for($i=$paged+1; $i<=$paged+$number_plus;$i++):
+                            $url = nt_page_link( $i,$current_url ); ?>
+                            <li><a <?php echo $data; ?> data-page="<?php echo $i ?>" href="<?php echo $url; ?>"><span><?php echo $i ?></span></a></li>
+                        <?php endfor; 
+                    endif; 
+                endif; 
+                $next = $paged < $number_p?$paged+1:$number_p; 
+                $url = nt_page_link( $next,$current_url ); 
+                ?>
+                <?php if($paged < $next): ?>
+                    <li class="btn-next">
+                        <a <?php echo $data; ?> data-page="<?php echo $next; ?>" href="<?php echo $url; ?>">></a>
+                    </li>
+                <?php endif; ?>
+            </ul>
+            <?php
+        }
+    }
+}
+//==================== END nav-pagination ========================//
+
+
+B2: ADD TO THE APPROPRIATE LOCATION
+    +  $paged =  get_query_var('paged')?get_query_var('paged'):1;
+    +  'paged'          => $paged
+    +  <?php nt_pagination($args,array('posts_per_page'=>$args['posts_per_page'])); ?>
+    
+
+CODE EXAMPLE:
+
+$paged =  get_query_var('paged')?get_query_var('paged'):1;
+$args = array(
+    'post_type'=> 'our-work',
+    'orderby'    => 'date',
+    'post_status' => 'publish',
+    "posts_per_page" => 6,
+    'order'    => 'DESC',
+    'paged'          => $paged
+);
+$lang_posts = new WP_Query($args);
+$posts = $lang_posts->posts;
+    ?>
+    <section class="work-page--main">
+        <div class="container">
+            <div class="work-page--main--cont-group">
+                <div class="work-page--main--cont-group--background-behind"></div>
+                <div class="work-page--main--cont-group--category-image">
+                    <div class="row">
+                        <?php
+                            foreach($posts as $post){
+                                ?>
+                                    <div class="col-lg-4 col-md-4 col-sm-12 col-12">
+                                        <div class="category-image--col-content">
+                                            <div class="category-image--col-content--cont-image-category">
+                                                <a href="<?php echo get_permalink($post->ID); ?>" title="<?php echo $post->post_title; ?>">
+                                                    <img src="<?php echo get_the_post_thumbnail_url($post->ID)?get_the_post_thumbnail_url($post->ID):DF_IMAGE.'/noimage.png';?>" alt="image-work-page" />
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php
+                            };
+                        ?>
+                    </div>
+                    <?php nt_pagination($args,array('posts_per_page'=>$args['posts_per_page'])); ?>
+                </div>
+            </div>
+        </div>
+    </section>
+
