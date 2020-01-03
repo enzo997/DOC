@@ -1,0 +1,26 @@
+// Hinden mail and phone
+function phoneTo(){
+    $('.phone-to').click(function(){
+        self = $(this);
+        phone = "tel:+" +self.data('phone');
+        window.open(phone);
+    });
+}
+function mailTo(){
+    $('.mail-to').click(function(){
+        self = $(this);
+        mail = "mailto:" +self.data('phone');
+        window.open(mail);
+    });
+}
+
+===> php
+
+<li class="col-lg-3 col-md-4 col-sm-12 col-12">
+   <span title = "tell-to" class="phone-to" data-phone ="<?php $delete = array(' ','(',')','+','-');echo str_replace($delete,'',$phone_number);?>">
+	<?php echo $phone_number; ?>
+   </span>
+</li>
+<li class="col-lg-3 col-md-4 col-sm-12 col-12">
+    <span class ="mail-to" title="mail-to"  mail = "<?php echo $email; ?>"><?php echo $email; ?></span>
+</li>
